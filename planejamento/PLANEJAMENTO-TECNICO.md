@@ -154,7 +154,7 @@ saveforge-desktop/
 │   │   ├── windows/  linux/  macos/
 │   ├── db/                      # SQLite: schema, migrations (PRAGMA user_version), repositórios
 │   ├── profiles/                # carga/validação de perfis, precedência, resolver, mecanismos
-│   │   └── mechanisms/          # standard, latest-n, store-user-scoped, registry-keys, ...
+│   │   └── mechanisms/          # standard, latest-n, store-user-scoped, ...
 │   ├── detection/               # detectores de launchers + matcher + varredura "save-first"
 │   │   ├── steam/  epic/  gog/  heroic/  lutris/  manual/
 │   ├── vault/                   # armazenamento por conteúdo, snapshots, retenção, verificação
@@ -444,7 +444,7 @@ exclude: ["**/*.log", "**/Crashes/**"]
 backup:
   requireGameClosed: false
   processNames: ["hollow_knight.exe", "hollow_knight.x86_64"]
-  cloudSync: { steam: true }           # gera o aviso de conflito com o cloud do launcher
+  cloudSync: [steam]                   # lojas cujo cloud cobre o jogo (política de conflito)
 mechanism:
   type: standard                       # ver catálogo §6.4
 compatibility:
@@ -481,9 +481,14 @@ Um "novo mecanismo" proposto pela comunidade é uma **solicitação de funcional
 | `standard` | copia os arquivos que casam com os globs | — |
 | `latest-n` | jogos que criam um diretório ou arquivo por save; guarda apenas os N mais recentes | `n`, `sortBy: mtime\|name` |
 | `store-user-scoped` | saves por conta da loja; na restauração em outra conta, pede o mapeamento | `store` |
-| `registry-keys` | exporta e importa chaves do registro do Windows (formato JSON próprio, nunca `.reg` executável) | — |
-| `consistent-copy` | arquivos que precisam ser copiados juntos (ex.: `*.db` + `*.db-wal`) | `groups` |
-| `size-guard` | jogos com saves grandes; exige confirmação acima do limite | `maxBytes` |
+
+
+> **Atualizado na especificação (saveforge-specs, profile v1):** `registry-keys`, `consistent-copy` e `size-guard` deixaram de ser mecanismos, porque um jogo pode precisar deles **junto** com qualquer outro mecanismo.
+> - O registro do Windows é a seção própria `registry` do perfil, gravado como JSON tipado e nunca como `.reg` executável.
+> - Leituras consistentes de vários arquivos (ex.: `*.db` + `*.db-wal`) ficam em `backup.consistentGroups`.
+> - O limite de tamanho fica em `backup.maxBytes`.
+>
+> O catálogo normativo é `saveforge-specs/profile/mechanisms.md`.
 
 Um perfil que referencia um `type` desconhecido pelo app instalado é **ignorado com aviso**, e o app sugere atualizar. O perfil não é interpretado parcialmente.
 
@@ -1014,7 +1019,7 @@ Legenda dos prefixos: **S** specs · **D** desktop · **R** registry · **A** ap
 | D2.3 | Retenção configurável + verificação periódica + "reconstruir índice" | D1.6 |
 | D2.4 | Diff e detecção de conflitos na restauração + política de cloud do launcher (§5.6.1) | D1.7 |
 | D2.5 | Export incremental | D2.1 |
-| D2.6 | Mecanismos `latest-n`, `store-user-scoped`, `registry-keys`, `consistent-copy`, `size-guard` | D1.3 |
+| D2.6 | Mecanismos `latest-n` e `store-user-scoped`; opções `backup.consistentGroups` e `backup.maxBytes`; seção `registry` | D1.3 |
 | D2.7 | Assinatura de código Windows/macOS, Flatpak → **release 0.3.0-beta** | D2.1–D2.4 |
 
 ### Fase 3 — Infraestrutura da comunidade (pode começar em paralelo à Fase 2)
@@ -1079,11 +1084,11 @@ flowchart LR
 | Cloud do launcher (Steam Cloud etc.) sobrescreve o save restaurado | alto (perda de dados percebida) | política escolhida pelo usuário, global ou por jogo (§5.6.1); snapshot `pre-restore`; guia por loja |
 | Jogo modificando arquivos durante o backup | médio | leitura estável com nova checagem, `inconsistent`, `requireGameClosed`, gatilho de saída do jogo |
 | Saves do Xbox/Microsoft Store (contêineres `wgs`) | médio | fora da v1; investigar o formato de contêiner mais tarde |
-| Saves no registro do Windows e saves em nuvem exclusiva do jogo | médio | mecanismo `registry-keys`; documentar jogos sem saves locais |
+| Saves no registro do Windows e saves em nuvem exclusiva do jogo | médio | seção `registry` do perfil; documentar jogos sem saves locais |
 | Variedade de caminhos no Linux (Proton, Wine, Flatpak Steam, Snap) | médio | detectores específicos + fixtures de teste para cada variante |
 | macOS: permissões (TCC) para `~/Library/Containers` e outros | médio | solicitar acesso sob demanda; documentar; testar em CI macOS |
 | Custos de assinatura de código (Apple ~US$ 99/ano; Windows) | médio | SignPath Foundation para Windows; macOS pode começar sem notarização na alpha |
-| Saves muito grandes (GBs) | médio | `size-guard`, exclusões, progresso e cancelamento |
+| Saves muito grandes (GBs) | médio | `backup.maxBytes`, exclusões, progresso e cancelamento |
 | Mais de uma conta Steam na máquina | médio | `<storeUserId>` expandido por conta + mapeamento na restauração |
 | Gargalo humano na moderação | médio | votos e testes para priorizar; mantenedores por escopo (jogo ou letra) |
 | Dependência do Supabase | baixo/médio | o núcleo local não depende dele; Postgres padrão; migrations versionadas; o Registry não depende do Supabase |
