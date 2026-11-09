@@ -526,7 +526,7 @@ O mesmo arquivo pode aparecer em vários snapshots e jogos e é armazenado uma �
   "createdBy": { "app": "SaveForge Desktop", "version": "0.2.0" },
   "mode": "full",
   "baseExportId": null,
-  "source": { "os": "windows", "placeholders": { "<home>": "C:/Users/dario" } },
+  "source": { "os": "windows", "placeholders": { "<home>": "C:/Users/player" } },
   "games": [
     {
       "gameId": "hollow-knight",
