@@ -14,7 +14,7 @@ As superfícies são neutras, em cinza-azulado, com variantes clara e escura. A 
 
 | Região | Conteúdo |
 |---|---|
-| Barra de título | No Windows e no macOS, o app ocupa a área da barra de título e o sistema continua desenhando os próprios botões (veja a ADR 0006 do Desktop). Logo abaixo da faixa do sistema fica a barra de busca (`Ctrl+K`). Arrastar a área vazia move a janela, e o duplo clique maximiza. |
+| Barra de título | Unificada (32 px). No Windows e no macOS, o logo e a busca (`Ctrl+K`) ficam na própria faixa do sistema, ao lado dos botões nativos da janela (veja a ADR 0006 do Desktop). Arrastar a área vazia move a janela, e o duplo clique maximiza. |
 | Trilho de navegação | Ícones de 44 px com tooltip: Biblioteca, Atividade, Importar/Exportar, Configurações. |
 | Painel de conteúdo | Superfície `bg` com o canto superior esquerdo arredondado (`radiusPanel`). |
 | Barra de atalhos | Atalhos da página atual e, à direita, o estado do backup automático e do vault. |
