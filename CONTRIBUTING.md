@@ -8,7 +8,7 @@ Este repositório guarda a documentação **transversal** do ecossistema SaveFor
 |---|---|
 | `planejamento/` | Planejamento técnico e roadmap |
 | `adr/` | Architecture Decision Records que afetam mais de um repositório |
-| `design/` | Direção visual (Forja), com tokens e regras de componentes |
+| `design/` | Direções visuais (Console × Studio no Desktop, Forja no Community), com tokens e regras de componentes |
 
 As ADRs que afetam um único repositório ficam em `docs/adr/` dentro desse repositório. Os formatos normativos (schemas, specs) ficam em `saveforge-specs`.
 
