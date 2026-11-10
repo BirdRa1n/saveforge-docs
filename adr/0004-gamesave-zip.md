@@ -4,7 +4,7 @@
 
 ## Decisão
 Um arquivo `.gamesave` é um ZIP (deflate) com:
-1. `mimetype` como primeira entrada, sem compressão (STORED), contendo `application/vnd.saveforge.gamesave+zip`;
+1. `mimetype` como primeira entrada, sem compressão (STORED), contendo `application/vnd.savevault.gamesave+zip`;
 2. `manifest.json` (schema `gamesave/manifest.v1`) e `manifest.json.sha256`;
 3. `blobs/<sha256>`, deduplicados.
 

@@ -1,6 +1,6 @@
-# saveforge-docs
+# savevault-docs
 
-Documentação geral do ecossistema SaveForge.
+Documentação geral do ecossistema SaveVault.
 
 - [Planejamento técnico (proposta para revisão)](planejamento/PLANEJAMENTO-TECNICO.md)
 - [Architecture Decision Records](adr/README.md)

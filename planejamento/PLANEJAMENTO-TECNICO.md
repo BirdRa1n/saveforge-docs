@@ -1,4 +1,4 @@
-# SaveForge — Planejamento técnico do ecossistema
+# SaveVault — Planejamento técnico do ecossistema
 
 > **Status:** proposta para revisão (rascunho v0.1, 2026-11-09)
 > **Escopo:** arquitetura, contratos, modelo de dados, segurança, testes, versionamento e roadmap.
@@ -10,12 +10,12 @@
 2. [Diagrama de comunicação entre componentes](#2-diagrama-de-comunicação-entre-componentes)
 3. [Decisões principais (resumo)](#3-decisões-principais-resumo)
 4. [Estrutura dos seis repositórios](#4-estrutura-dos-seis-repositórios)
-5. [SaveForge Desktop — arquitetura interna](#5-saveforge-desktop--arquitetura-interna)
+5. [SaveVault Desktop — arquitetura interna](#5-savevault-desktop--arquitetura-interna)
 6. [Especificação inicial dos perfis de jogos](#6-especificação-inicial-dos-perfis-de-jogos)
 7. [Especificação inicial do formato `.gamesave`](#7-especificação-inicial-do-formato-gamesave)
 8. [Registry — distribuição, atualização e assinatura](#8-registry--distribuição-atualização-e-assinatura)
 9. [Backend Supabase — modelo de dados, autenticação e RLS](#9-backend-supabase--modelo-de-dados-autenticação-e-rls)
-10. [SaveForge Community — arquitetura do website](#10-saveforge-community--arquitetura-do-website)
+10. [SaveVault Community — arquitetura do website](#10-savevault-community--arquitetura-do-website)
 11. [Contratos entre componentes](#11-contratos-entre-componentes)
 12. [Fluxos principais](#12-fluxos-principais)
 13. [Fontes de dados externas](#13-fontes-de-dados-externas)
@@ -36,8 +36,8 @@ O ecossistema se apoia em **três fontes da verdade**, uma para cada tipo de inf
 | Informação | Fonte da verdade | Quem consome |
 |---|---|---|
 | Saves e backups do usuário | **Máquina do usuário** (vault local do Desktop) | Desktop; futuramente nuvem escolhida pelo usuário |
-| Perfis oficiais de jogos | **Repositório Git `saveforge-registry`** → bundle assinado | Desktop (download), Community (espelho de leitura) |
-| Fluxo comunitário (usuários, contribuições, votos, comentários, reputação) | **Supabase** (`saveforge-api`) | Community; futuramente o Desktop, para login opcional |
+| Perfis oficiais de jogos | **Repositório Git `savevault-registry`** → bundle assinado | Desktop (download), Community (espelho de leitura) |
+| Fluxo comunitário (usuários, contribuições, votos, comentários, reputação) | **Supabase** (`savevault-api`) | Community; futuramente o Desktop, para login opcional |
 
 Princípios que orientam o restante do documento:
 
@@ -45,7 +45,7 @@ Princípios que orientam o restante do documento:
 2. **O Registry é estático, assinado e independente.** São arquivos JSON versionados, servidos por CDN ou GitHub e verificados no cliente com Ed25519. Não existe API dinâmica para baixar perfis.
 3. **Os perfis são dados, nunca código.** A comunidade descreve *onde* estão os saves e *qual mecanismo embutido* usar. Um mecanismo novo é código C++ revisado no repositório do Desktop.
 4. **Dupla barreira de publicação.** Uma aprovação na Community gera um *Pull Request* no Registry. Ela não publica nada diretamente. Assim, comprometer o Supabase não basta para distribuir um perfil malicioso.
-5. **Os contratos ficam em `saveforge-specs`.** Os JSON Schemas e as especificações são normativos, e os demais repositórios dependem de uma versão fixada (*pinned*) deles.
+5. **Os contratos ficam em `savevault-specs`.** Os JSON Schemas e as especificações são normativos, e os demais repositórios dependem de uma versão fixada (*pinned*) deles.
 6. **Supabase nativo primeiro.** A ordem de preferência é PostgREST + RLS, depois funções Postgres (RPC) e, só quando necessário, Edge Functions. Não haverá API REST própria.
 
 ## 2. Diagrama de comunicação entre componentes
@@ -53,7 +53,7 @@ Princípios que orientam o restante do documento:
 ```mermaid
 flowchart LR
     subgraph User["Máquina do usuário"]
-        D["SaveForge Desktop<br/>(Qt 6 / QML / C++20)"]
+        D["SaveVault Desktop<br/>(Qt 6 / QML / C++20)"]
         V[("Vault local<br/>blobs + snapshots")]
         DB[("SQLite<br/>índice local")]
         FS["Saves dos jogos<br/>(disco / registro do Windows)"]
@@ -63,23 +63,23 @@ flowchart LR
     end
 
     subgraph Static["Distribuição estática"]
-        CDN["registry.saveforge.*<br/>(GitHub Pages / R2)<br/>root.json · index.json · bundles"]
+        CDN["registry.savevault.*<br/>(GitHub Pages / R2)<br/>root.json · index.json · bundles"]
         GHR["GitHub Releases<br/>(arquivo histórico)"]
     end
 
-    subgraph GH["GitHub — org SaveForge"]
-        REG["saveforge-registry<br/>(YAML + CI)"]
-        SPEC["saveforge-specs<br/>(schemas + specs)"]
+    subgraph GH["GitHub — org SaveVault"]
+        REG["savevault-registry<br/>(YAML + CI)"]
+        SPEC["savevault-specs<br/>(schemas + specs)"]
     end
 
-    subgraph SB["Supabase (saveforge-api)"]
+    subgraph SB["Supabase (savevault-api)"]
         AUTH["Auth"]
         PG[("Postgres + RLS<br/>+ RPC")]
         ST["Storage"]
         EF["Edge Functions<br/>publish · registry-sync · metadata"]
     end
 
-    W["SaveForge Community<br/>(Next.js / TS)"]
+    W["SaveVault Community<br/>(Next.js / TS)"]
 
     D -->|"HTTPS GET + verificação Ed25519"| CDN
     REG -->|"CI: valida, compila, assina"| CDN
@@ -122,12 +122,12 @@ Nenhuma seta vai do Desktop para o Supabase nas Fases 1–4. A seta pontilhada �
 
 ```mermaid
 flowchart TB
-    specs["saveforge-specs<br/>schemas, specs, vetores de teste"]
-    desktop["saveforge-desktop"]
-    registry["saveforge-registry"]
-    api["saveforge-api"]
-    community["saveforge-community"]
-    docs["saveforge-docs"]
+    specs["savevault-specs<br/>schemas, specs, vetores de teste"]
+    desktop["savevault-desktop"]
+    registry["savevault-registry"]
+    api["savevault-api"]
+    community["savevault-community"]
+    docs["savevault-docs"]
     specs --> desktop & registry & api & community
     api -->|"tipos TS gerados"| community
     registry -->|"bundle assinado"| desktop
@@ -135,19 +135,19 @@ flowchart TB
 ```
 
 Regras contra duplicação:
-- Um schema é definido **somente** em `saveforge-specs`. Os outros repositórios consomem esse schema e geram tipos a partir dele, sem copiá-lo à mão.
+- Um schema é definido **somente** em `savevault-specs`. Os outros repositórios consomem esse schema e geram tipos a partir dele, sem copiá-lo à mão.
 - A lógica de "resolver um perfil em caminhos reais" existe **somente** no Desktop. O Community valida a estrutura e as regras de segurança dos caminhos, mas não os resolve.
-- A documentação normativa (o que é obrigatório) fica em `saveforge-specs`. A documentação informativa (guias e tutoriais) fica em `saveforge-docs`.
+- A documentação normativa (o que é obrigatório) fica em `savevault-specs`. A documentação informativa (guias e tutoriais) fica em `savevault-docs`.
 
-### 4.2 `saveforge-desktop`
+### 4.2 `savevault-desktop`
 
 ```
-saveforge-desktop/
+savevault-desktop/
 ├── CMakeLists.txt
 ├── CMakePresets.json            # presets: windows-msvc, windows-mingw, linux-gcc, macos-clang, *-asan
 ├── vcpkg.json                   # dependências não-Qt (zstd, libsodium, minizip-ng, qtkeychain)
 ├── cmake/                       # módulos auxiliares (warnings, sanitizers, versioning)
-├── external/specs/              # submódulo git de saveforge-specs (tag fixada)
+├── external/specs/              # submódulo git de savevault-specs (tag fixada)
 ├── src/
 │   ├── core/                    # tipos de domínio, Result/Error, IDs, placeholders (QtCore apenas)
 │   ├── platform/                # caminhos do SO, processos, registro do Windows, keychain
@@ -163,7 +163,7 @@ saveforge-desktop/
 │   ├── services/                # casos de uso: Scan, Backup, Restore, Export, Import, Scheduler
 │   ├── app/                     # executável GUI: main.cpp, view models, qml/
 │   │   └── qml/                 # Main.qml, pages/, components/, theme/
-│   └── cli/                     # executável saveforge-cli (headless, scripts, testes e2e)
+│   └── cli/                     # executável savevault-cli (headless, scripts, testes e2e)
 ├── tests/
 │   ├── unit/  integration/  e2e/
 │   ├── fixtures/                # árvores falsas de Steam/Epic/GOG/Proton, saves de exemplo
@@ -173,16 +173,16 @@ saveforge-desktop/
 │   ├── macos/                   # .app/.dmg, entitlements, notarização
 │   └── linux/                   # AppImage, Flatpak (manifest), .desktop
 ├── resources/                   # ícones, bundle de perfis embutido (seed offline)
-├── i18n/                        # saveforge_pt_BR.ts, saveforge_en.ts
+├── i18n/                        # savevault_pt_BR.ts, savevault_en.ts
 └── docs/                        # notas internas do repositório (não normativas)
 ```
 
 Observação sobre o estado atual: o projeto ainda se chama `SaveVault` (CMake, `.ts`, README) e usa Widgets com C++17. A tarefa D0.1 do roadmap substitui esse template. As pastas `build/` e `.qtcreator/` também precisam entrar no `.gitignore`.
 
-### 4.3 `saveforge-registry`
+### 4.3 `savevault-registry`
 
 ```
-saveforge-registry/
+savevault-registry/
 ├── profiles/
 │   └── h/hollow-knight/profile.yaml     # um perfil por diretório (permite anexos e README)
 ├── upstream/
@@ -195,16 +195,16 @@ saveforge-registry/
 │   ├── workflows/validate.yml           # em todo PR: schema + lint de caminhos + diff legível
 │   ├── workflows/release.yml            # em merge na main: build, assinatura, publicação
 │   └── CODEOWNERS                       # mantenedores por pasta/letra
-├── LICENSE-DATA                         # licença dos perfis nativos SaveForge
+├── LICENSE-DATA                         # licença dos perfis nativos SaveVault
 └── CONTRIBUTING.md                      # aponta para a Community como caminho principal
 ```
 
 O repositório guarda **somente o código-fonte dos perfis**. Os artefatos compilados (`index.json`, bundles) são publicados pelo CI e não são versionados em Git.
 
-### 4.4 `saveforge-specs`
+### 4.4 `savevault-specs`
 
 ```
-saveforge-specs/
+savevault-specs/
 ├── profile/
 │   ├── SPEC.md                          # semântica normativa (RFC 2119)
 │   ├── placeholders.md                  # <home>, <winAppData>, <xdgConfig>, <storeUserId>, ...
@@ -222,15 +222,15 @@ saveforge-specs/
 ├── integration/
 │   ├── publication-pr.md                # formato do PR gerado pela Community no Registry
 │   └── registry-sync-webhook.md         # payload HMAC do Registry para o Supabase
-├── packages/js/                         # pacote npm @saveforge/specs (schemas + tipos TS gerados)
+├── packages/js/                         # pacote npm @savevault/specs (schemas + tipos TS gerados)
 ├── VERSIONING.md
 └── CHANGELOG.md
 ```
 
-### 4.5 `saveforge-api`
+### 4.5 `savevault-api`
 
 ```
-saveforge-api/
+savevault-api/
 ├── supabase/
 │   ├── config.toml
 │   ├── migrations/                      # <timestamp>_<nome>.sql (nunca editar migration aplicada)
@@ -241,14 +241,14 @@ saveforge-api/
 │   │   ├── registry-sync/               # recebe webhook de release, atualiza espelho
 │   │   └── game-metadata/               # proxy com cache para IGDB/SteamGridDB (segredos)
 │   └── tests/                           # pgTAP: *.test.sql (RLS, RPC, triggers)
-├── types/                               # database.types.ts gerado (publicado como @saveforge/db-types)
+├── types/                               # database.types.ts gerado (publicado como @savevault/db-types)
 └── docs/                                # operações: deploy, rotação de segredos, papéis
 ```
 
-### 4.6 `saveforge-community`
+### 4.6 `savevault-community`
 
 ```
-saveforge-community/
+savevault-community/
 ├── src/
 │   ├── app/
 │   │   ├── (public)/  games/[slug]/  contributions/[id]/  u/[username]/
@@ -261,13 +261,13 @@ saveforge-community/
 │   ├── components/ui/                   # shadcn/ui
 │   └── middleware.ts                    # renovação de sessão (@supabase/ssr)
 ├── tests/{unit,e2e}/
-└── package.json                         # depende de @saveforge/specs e @saveforge/db-types
+└── package.json                         # depende de @savevault/specs e @savevault/db-types
 ```
 
-### 4.7 `saveforge-docs`
+### 4.7 `savevault-docs`
 
 ```
-saveforge-docs/
+savevault-docs/
 ├── adr/                                 # decisões transversais (este planejamento)
 ├── planejamento/                        # este documento
 ├── site/                                # Starlight (Astro): guias de usuário e contribuidor
@@ -279,7 +279,7 @@ As ADRs **locais** de cada repositório, como "por que minizip-ng", ficam em `do
 
 ---
 
-## 5. SaveForge Desktop — arquitetura interna
+## 5. SaveVault Desktop — arquitetura interna
 
 ### 5.1 Camadas e regra de dependência
 
@@ -294,7 +294,7 @@ flowchart TB
     detection & profiles & vault & archive & registry & db --> core
 ```
 
-- Cada pasta de `src/` é uma **biblioteca CMake estática** (`saveforge::core`, `saveforge::vault`, ...). Os executáveis `app` e `cli` apenas montam essas bibliotecas.
+- Cada pasta de `src/` é uma **biblioteca CMake estática** (`savevault::core`, `savevault::vault`, ...). Os executáveis `app` e `cli` apenas montam essas bibliotecas.
 - `core` depende apenas de **QtCore**. Nenhuma biblioteca abaixo de `app` depende de QtGui ou QtQuick. Isso garante que a CLI e os testes rodem sem display.
 - A UI **nunca** acessa o disco diretamente. Ela chama `services`, que executam *jobs* canceláveis em `QThreadPool` e reportam progresso por sinais.
 - Os erros usam um tipo `Result<T, Error>` próprio (no C++20 ainda não existe `std::expected`). Exceções não atravessam fronteiras de módulo.
@@ -330,7 +330,7 @@ Um pipeline com três estratégias complementares:
 
 ### 5.4 Banco SQLite local
 
-Fica em `QStandardPaths::AppDataLocation/saveforge.db`, em modo WAL, com migrations sequenciais (`PRAGMA user_version`). **O banco é um índice, não a fonte da verdade:** os snapshots também ficam em JSON dentro do vault, e o comando "Reconstruir índice" recria o banco a partir deles.
+Fica em `QStandardPaths::AppDataLocation/savevault.db`, em modo WAL, com migrations sequenciais (`PRAGMA user_version`). **O banco é um índice, não a fonte da verdade:** os snapshots também ficam em JSON dentro do vault, e o comando "Reconstruir índice" recria o banco a partir deles.
 
 | Tabela | Conteúdo |
 |---|---|
@@ -349,7 +349,7 @@ Fica em `QStandardPaths::AppDataLocation/saveforge.db`, em modo WAL, com migrati
 ### 5.5 Vault e backup incremental
 
 ```
-<vault>/                                  # padrão: AppData/SaveForge/vault (configurável)
+<vault>/                                  # padrão: AppData/SaveVault/vault (configurável)
 ├── vault.json                            # id, versão do formato, data de criação
 ├── blobs/sha256/ab/abcdef0123…zst        # conteúdo comprimido (zstd), nomeado pelo hash do conteúdo original
 ├── snapshots/<game-id>/<snapshot-id>.json
@@ -371,21 +371,21 @@ Fica em `QStandardPaths::AppDataLocation/saveforge.db`, em modo WAL, com migrati
 - **Conflitos:** quando o save atual é mais novo que o snapshot escolhido ou contém arquivos ausentes nele, a UI mostra um diff (arquivos adicionados, removidos e alterados) e pede confirmação.
 - **Steam Cloud e outros clouds de launcher:** quem decide é o usuário (ver §5.6.1).
 
-#### 5.6.1 Prioridade entre o SaveForge e o cloud do launcher
+#### 5.6.1 Prioridade entre o SaveVault e o cloud do launcher
 
-Quando um jogo tem cloud ativo na loja (Steam Cloud, GOG Galaxy, Epic, ...), restaurar um save pelo SaveForge pode entrar em conflito com o cloud: o launcher pode sobrescrever o save restaurado, ou mostrar um diálogo de conflito. O SaveForge **não decide sozinho** e **não altera configurações do launcher**. O usuário escolhe uma política, que pode ser global ou por jogo:
+Quando um jogo tem cloud ativo na loja (Steam Cloud, GOG Galaxy, Epic, ...), restaurar um save pelo SaveVault pode entrar em conflito com o cloud: o launcher pode sobrescrever o save restaurado, ou mostrar um diálogo de conflito. O SaveVault **não decide sozinho** e **não altera configurações do launcher**. O usuário escolhe uma política, que pode ser global ou por jogo:
 
 | Política | Comportamento na restauração | Backups |
 |---|---|---|
 | **Perguntar sempre** (padrão) | Antes de restaurar, mostra o conflito e oferece as duas opções abaixo, com "lembrar para este jogo" | normais |
-| **Priorizar o cloud do launcher** | O SaveForge não restaura sobre um jogo com cloud ativo. O botão "Restaurar" vira "Exportar para pasta…", para restauração manual consciente | normais. O SaveForge continua como cópia de segurança extra |
-| **Priorizar o SaveForge** | Restaura e mostra um guia específico da loja. Na Steam, por exemplo: escolher "manter arquivos locais" no diálogo de conflito, ou desativar o Steam Cloud do jogo nas propriedades | normais |
+| **Priorizar o cloud do launcher** | O SaveVault não restaura sobre um jogo com cloud ativo. O botão "Restaurar" vira "Exportar para pasta…", para restauração manual consciente | normais. O SaveVault continua como cópia de segurança extra |
+| **Priorizar o SaveVault** | Restaura e mostra um guia específico da loja. Na Steam, por exemplo: escolher "manter arquivos locais" no diálogo de conflito, ou desativar o Steam Cloud do jogo nas propriedades | normais |
 
 Detalhes:
 - **Detecção do cloud:** o perfil declara se o jogo usa cloud (`backup.cloudSync`). Quando for possível, o app confirma localmente. Na Steam, por exemplo, pela existência de `userdata/<id>/<appid>/remotecache.vdf`. O formato exato dos arquivos de configuração da Steam será investigado na implementação. Se não for possível detectar, vale o que o perfil diz.
-- **Restaurar com o launcher aberto:** com a política "Priorizar o SaveForge", o app recomenda fechar o launcher antes de restaurar, porque o launcher pode sincronizar no meio da operação.
+- **Restaurar com o launcher aberto:** com a política "Priorizar o SaveVault", o app recomenda fechar o launcher antes de restaurar, porque o launcher pode sincronizar no meio da operação.
 - **Desfazer:** o snapshot `pre-restore` continua sendo criado em todos os casos.
-- **Onde fica a escolha:** em `game_settings.cloud_policy` (`ask` | `prefer_launcher` | `prefer_saveforge`), com um valor global em `settings`.
+- **Onde fica a escolha:** em `game_settings.cloud_policy` (`ask` | `prefer_launcher` | `prefer_savevault`), com um valor global em `settings`.
 
 ### 5.7 Backups automáticos
 
@@ -483,12 +483,12 @@ Um "novo mecanismo" proposto pela comunidade é uma **solicitação de funcional
 | `store-user-scoped` | saves por conta da loja; na restauração em outra conta, pede o mapeamento | `store` |
 
 
-> **Atualizado na especificação (saveforge-specs, profile v1):** `registry-keys`, `consistent-copy` e `size-guard` deixaram de ser mecanismos, porque um jogo pode precisar deles **junto** com qualquer outro mecanismo.
+> **Atualizado na especificação (savevault-specs, profile v1):** `registry-keys`, `consistent-copy` e `size-guard` deixaram de ser mecanismos, porque um jogo pode precisar deles **junto** com qualquer outro mecanismo.
 > - O registro do Windows é a seção própria `registry` do perfil, gravado como JSON tipado e nunca como `.reg` executável.
 > - Leituras consistentes de vários arquivos (ex.: `*.db` + `*.db-wal`) ficam em `backup.consistentGroups`.
 > - O limite de tamanho fica em `backup.maxBytes`.
 >
-> O catálogo normativo é `saveforge-specs/profile/mechanisms.md`.
+> O catálogo normativo é `savevault-specs/profile/mechanisms.md`.
 
 Um perfil que referencia um `type` desconhecido pelo app instalado é **ignorado com aviso**, e o app sugere atualizar. O perfil não é interpretado parcialmente.
 
@@ -506,7 +506,7 @@ O arquivo é um **ZIP** com deflate, escolhido para inspeção fácil e máxima 
 
 ```
 arquivo.gamesave
-├── mimetype                 # 1ª entrada, STORED, conteúdo: application/vnd.saveforge.gamesave+zip
+├── mimetype                 # 1ª entrada, STORED, conteúdo: application/vnd.savevault.gamesave+zip
 ├── manifest.json            # metadados (schema manifest.v1)
 ├── manifest.json.sha256     # hash do manifest (detecção de corrupção)
 └── blobs/
@@ -519,11 +519,11 @@ O mesmo arquivo pode aparecer em vários snapshots e jogos e é armazenado uma �
 
 ```json
 {
-  "format": "saveforge.gamesave",
+  "format": "savevault.gamesave",
   "formatVersion": 1,
   "exportId": "0193f1c2-7a4e-7d2b-9c11-5e3f0a8b9d10",
   "createdAt": "2026-11-09T14:03:22Z",
-  "createdBy": { "app": "SaveForge Desktop", "version": "0.2.0" },
+  "createdBy": { "app": "SaveVault Desktop", "version": "0.2.0" },
   "mode": "full",
   "baseExportId": null,
   "source": { "os": "windows", "placeholders": { "<home>": "C:/Users/player" } },
@@ -588,7 +588,7 @@ https://registry.<domínio>/v1/
   "expires": "2027-02-07T12:00:00Z",
   "minAppVersion": "0.1.0",
   "bundle": { "url": "bundles/official-000042.json.zst", "sha256": "…", "size": 812345, "profiles": 1840 },
-  "source": { "repo": "SaveForge/saveforge-registry", "commit": "a1b2c3d" }
+  "source": { "repo": "SaveVault/savevault-registry", "commit": "a1b2c3d" }
 }
 ```
 
@@ -788,9 +788,9 @@ Regras:
 
 ---
 
-## 10. SaveForge Community — arquitetura do website
+## 10. SaveVault Community — arquitetura do website
 
-- **Stack:** Next.js (App Router), TypeScript estrito, `@supabase/ssr`, Tailwind + shadcn/ui, Zod para formulários e Ajv para o schema de perfil (via `@saveforge/specs`).
+- **Stack:** Next.js (App Router), TypeScript estrito, `@supabase/ssr`, Tailwind + shadcn/ui, Zod para formulários e Ajv para o schema de perfil (via `@savevault/specs`).
 - **Renderização:** as páginas públicas (jogos, perfis, contribuições, usuários) são Server Components com cache e revalidação. A área logada é dinâmica.
 - **Mutações:** Server Actions chamam RPCs com o JWT do usuário, então a RLS e as RPCs são a única barreira de autorização. O frontend apenas reflete as permissões: esconder um botão não é segurança.
 - **Editor de contribuição:** um formulário estruturado com uma aba YAML, validação ao vivo com o mesmo JSON Schema do Registry, e um diff contra a revisão oficial atual (lida de `registry_profiles`).
@@ -806,12 +806,12 @@ Regras:
 | C1 | Registry CI → Desktop | `root.json`, `index.json`, bundle de perfis | HTTPS GET estático + Ed25519 | `specs/registry`, `specs/profile` |
 | C2 | Desktop ↔ Desktop (outra máquina) | `.gamesave` | arquivo | `specs/gamesave` |
 | C3 | Desktop ↔ armazenamento de nuvem (Fase 6) | layout do vault | arquivos/objetos | `specs/vault` |
-| C4 | Community ↔ Supabase | tabelas, views, RPCs | PostgREST/RPC | `saveforge-api` (tipos gerados `@saveforge/db-types`) |
+| C4 | Community ↔ Supabase | tabelas, views, RPCs | PostgREST/RPC | `savevault-api` (tipos gerados `@savevault/db-types`) |
 | C5 | Supabase (Edge) → Registry | PR com `profile.yaml` + metadados da contribuição | GitHub App | `specs/integration/publication-pr.md` |
 | C6 | Registry CI → Supabase (Edge) | evento de release (sequence, perfis alterados, IDs de contribuição) | HTTPS POST + HMAC-SHA256 | `specs/integration/registry-sync-webhook.md` |
-| C7 | Desktop → Supabase (Fase 5) | login PKCE; envio de relatório de teste | Supabase Auth + RPC | `saveforge-api` |
+| C7 | Desktop → Supabase (Fase 5) | login PKCE; envio de relatório de teste | Supabase Auth + RPC | `savevault-api` |
 
-O formato do PR (C5) inclui, no corpo do PR, um bloco `saveforge-contribution: {id, revision, author}`. O CI usa esse bloco para correlacionar a contribuição ao publicar, e o webhook C6 o devolve ao Supabase.
+O formato do PR (C5) inclui, no corpo do PR, um bloco `savevault-contribution: {id, revision, author}`. O CI usa esse bloco para correlacionar a contribuição ao publicar, e o webhook C6 o devolve ao Supabase.
 
 ---
 
@@ -837,7 +837,7 @@ sequenceDiagram
 O usuário escolhe "Backup" → resolver gera a lista de arquivos → verificação de processo → leitura estável + hash → gravação dos blobs novos → snapshot JSON → índice SQLite → `operation_log`.
 
 ### 12.3 Restauração
-O usuário escolhe um snapshot → diff com o estado atual → bloqueio se o jogo estiver aberto → **aplicação da política de cloud do jogo (§5.6.1): perguntar, priorizar o launcher ou priorizar o SaveForge** → snapshot `pre-restore` → *staging* → verificação dos hashes → troca atômica → guia da loja, se o usuário priorizou o SaveForge.
+O usuário escolhe um snapshot → diff com o estado atual → bloqueio se o jogo estiver aberto → **aplicação da política de cloud do jogo (§5.6.1): perguntar, priorizar o launcher ou priorizar o SaveVault** → snapshot `pre-restore` → *staging* → verificação dos hashes → troca atômica → guia da loja, se o usuário priorizou o SaveVault.
 
 ### 12.4 Exportar e importar `.gamesave`
 Exportar: seleção de jogos e snapshots → ZIP com os blobs deduplicados → verificação de leitura do arquivo gerado.
@@ -851,7 +851,7 @@ sequenceDiagram
     participant W as Community
     participant P as Postgres (RLS/RPC)
     participant E as Edge Functions
-    participant G as saveforge-registry
+    participant G as savevault-registry
     A->>W: cria rascunho e revisão (perfil YAML)
     W->>P: add_revision → pg_jsonschema + lint
     A->>W: submit
@@ -877,7 +877,7 @@ O usuário escolhe "Entrar" → o app gera `code_verifier` e `challenge` e abre 
 ### 13.1 Ludusavi Manifest
 - O CI do Registry fixa um commit (`upstream/ludusavi.lock.json`) e o atualiza automaticamente por PR semanal (bot), para que mudanças upstream também passem por revisão (diff resumido).
 - O conversor transforma o YAML do Ludusavi em `profile.v1` (placeholders mapeados 1:1, tags, registro, IDs de loja) e publica no canal `upstream-ludusavi`, com `provenance.source = ludusavi` e o arquivo de licença e atribuição dentro do bundle.
-- **Licença:** o código do Ludusavi Manifest é MIT. Os dados são compilados da PCGamingWiki, cujo conteúdo é licenciado como **CC BY-NC-SA 3.0** (segundo fontes secundárias; conferir no rodapé do wiki). **O SaveForge pode usar esses dados.** As condições a cumprir são:
+- **Licença:** o código do Ludusavi Manifest é MIT. Os dados são compilados da PCGamingWiki, cujo conteúdo é licenciado como **CC BY-NC-SA 3.0** (segundo fontes secundárias; conferir no rodapé do wiki). **O SaveVault pode usar esses dados.** As condições a cumprir são:
   - **BY (atribuição):** crédito à PCGamingWiki e ao Ludusavi Manifest no bundle, na tela "Sobre" do app e no site.
   - **NC (não comercial):** os dados não podem ser vendidos nem usados em um produto pago. Um projeto gratuito e open source cumpre isso. Se algum dia houver um recurso pago (ex.: nuvem própria paga), esse recurso não pode depender desses dados sem uma autorização da PCGamingWiki.
   - **SA (compartilha igual):** o canal `upstream-ludusavi` e qualquer modificação desses dados são redistribuídos sob a mesma licença. Por isso esse canal fica **separado** dos perfis nativos, que podem ter licença própria.
@@ -911,7 +911,7 @@ Não haverá *scraping*. A PCGamingWiki é usada como referência humana em revi
 | Execução de código vindo da comunidade | não existe: perfis são dados e mecanismos são código revisado no repositório do Desktop |
 | Escalada de privilégio no Desktop | o app nunca pede admin/root; sem serviço de sistema; acessa somente as pastas do usuário |
 
-### 14.2 Lint de caminhos (regras compartilhadas, especificadas em `saveforge-specs`)
+### 14.2 Lint de caminhos (regras compartilhadas, especificadas em `savevault-specs`)
 1. Todo caminho começa por um placeholder conhecido.
 2. Proibidos: `..`, caminhos absolutos, `~`, variáveis de ambiente cruas.
 3. Proibido glob diretamente na raiz do placeholder (`<home>/**`, `<winAppData>/*`). É obrigatório pelo menos um segmento literal depois do placeholder.
@@ -919,7 +919,7 @@ Não haverá *scraping*. A PCGamingWiki é usada como referência humana em revi
 5. Chaves de registro somente em `HKCU/Software/...`.
 6. Limites de quantidade de padrões e de tamanho do perfil.
 
-As mesmas regras são implementadas em três lugares (SQL, TypeScript no CI e C++ no Desktop), validadas pelos mesmos **vetores de teste** de `saveforge-specs`. A triplicação é intencional: são barreiras independentes.
+As mesmas regras são implementadas em três lugares (SQL, TypeScript no CI e C++ no Desktop), validadas pelos mesmos **vetores de teste** de `savevault-specs`. A triplicação é intencional: são barreiras independentes.
 
 ### 14.3 Pipeline de validação
 Envio → `pg_jsonschema` + lint (síncrono, bloqueante) → revisão comunitária (testes reais) → revisão humana → PR no Registry → CI (schema, lint, *diff* legível, verificação de IDs duplicados e de colisões com perfis existentes) → merge com revisor do CODEOWNERS → release assinada.
@@ -933,10 +933,10 @@ Envio → `pg_jsonschema` + lint (síncrono, bloqueante) → revisão comunitár
 | desktop | unitário | Qt Test + CTest | resolver de placeholders por SO, matcher, retenção, parsers VDF/ACF |
 | desktop | integração | Qt Test + fixtures | árvores falsas de Steam, Epic, GOG, Heroic e Proton em diretório temporário; backup → restore → comparação byte a byte |
 | desktop | propriedade | gerador próprio | *round-trip* aleatório: qualquer árvore de arquivos → snapshot → restore resulta em árvore idêntica; export → import idempotente |
-| desktop | conformidade | vetores de `saveforge-specs` | `.gamesave` válidos e inválidos; perfis válidos e inválidos; lint de caminhos |
+| desktop | conformidade | vetores de `savevault-specs` | `.gamesave` válidos e inválidos; perfis válidos e inválidos; lint de caminhos |
 | desktop | fuzzing | libFuzzer (Linux CI) | VDF, perfil JSON, `manifest.json`, leitura de ZIP, `index.json` |
 | desktop | robustez | testes dirigidos | arquivo alterado durante a leitura, disco cheio, processo interrompido no meio do backup (sem corromper o vault), arquivo bloqueado (Windows) |
-| desktop | E2E | `saveforge-cli` | cenários completos sem GUI; QML com Qt Quick Test para componentes críticos |
+| desktop | E2E | `savevault-cli` | cenários completos sem GUI; QML com Qt Quick Test para componentes críticos |
 | desktop | sanitizers | ASan/UBSan (Linux/macOS) | preset dedicado no CI |
 | api | banco | pgTAP via `supabase test db` | **cada policy RLS** testada com usuários anon, autenticado, autor, moderador, mantenedor e admin; RPCs e máquina de estados; proibição de autovoto e voto duplicado |
 | api | Edge Functions | `deno test` | HMAC, idempotência do webhook, formato do PR |
@@ -952,7 +952,7 @@ O CI do Desktop roda em uma matriz **Windows (MSVC) + Ubuntu (GCC) + macOS (Clan
 ## 16. Versionamento e releases
 
 - **SemVer** independente por repositório. *Conventional Commits* + release-please geram changelog e tags.
-- **Specs:** cada spec tem a própria versão (`profile v1`, `gamesave v1`, `registry v1`). Uma mudança incompatível cria `v2` com um novo arquivo de schema, e v1 e v2 coexistem. Os campos `schemaVersion` e `formatVersion` são inteiros. Os consumidores fixam uma tag de `saveforge-specs`.
+- **Specs:** cada spec tem a própria versão (`profile v1`, `gamesave v1`, `registry v1`). Uma mudança incompatível cria `v2` com um novo arquivo de schema, e v1 e v2 coexistem. Os campos `schemaVersion` e `formatVersion` são inteiros. Os consumidores fixam uma tag de `savevault-specs`.
 - **Desktop:** `0.x` enquanto o formato do vault puder mudar. Na `1.0`, o vault e o `.gamesave` v1 ficam congelados com garantia de leitura retroativa.
   - Windows: instalador assinado (ex.: SignPath Foundation, gratuito para OSS) + winget.
   - macOS: `.dmg` assinado e notarizado (exige Apple Developer Program).
@@ -992,7 +992,7 @@ Legenda dos prefixos: **S** specs · **D** desktop · **R** registry · **A** ap
 | S0.2 | Regras do lint de caminhos + vetores de teste | S0.1 |
 | S0.3 | `registry v1` (root/index/bundle + assinatura) | X0.1 |
 | S0.4 | `vault` e `gamesave v1` (rascunho) | X0.1 |
-| D0.1 | Reestruturar o projeto: renomear SaveVault → SaveForge, QML, C++20, presets, vcpkg, bibliotecas por módulo, CI em 3 SOs | X0.1 |
+| D0.1 | Reestruturar o projeto: renomear SaveVault → SaveVault, QML, C++20, presets, vcpkg, bibliotecas por módulo, CI em 3 SOs | X0.1 |
 
 ### Fase 1 — Desktop local (MVP) + Registry mínimo
 | ID | Tarefa | Depende de |
@@ -1111,7 +1111,7 @@ flowchart LR
 | TUF-lite | TUF completo (python-tuf/go-tuf) | não há implementação C++ madura; o subconjunto escolhido cobre rollback, freeze e rotação |
 | Supabase RLS + RPC | API REST própria / Edge Functions para tudo | mais código, mais superfície de ataque e duplicação das regras de autorização |
 | Validação em `pg_jsonschema` | validação só em Edge Function | o banco aplica a regra mesmo em chamadas diretas à API |
-| PKCE + loopback | *device code flow* / esquema `saveforge://` | o Supabase Auth suporta PKCE nativamente; o loopback evita registrar esquemas de URL em 3 SOs. O esquema customizado fica como alternativa |
+| PKCE + loopback | *device code flow* / esquema `savevault://` | o Supabase Auth suporta PKCE nativamente; o loopback evita registrar esquemas de URL em 3 SOs. O esquema customizado fica como alternativa |
 
 ---
 

@@ -1,7 +1,7 @@
 # Direção visual: Forja
 
-> **Status:** escolhida em 2026-11-09. No SaveForge Desktop, foi substituída em 2026-11-10 pela [Console × Studio](CONSOLE-STUDIO.md). Continua sendo a referência do SaveForge Community.
-> As propostas originais estão no canvas "SaveForge — Propostas de design".
+> **Status:** escolhida em 2026-11-09. No SaveVault Desktop, foi substituída em 2026-11-10 pela [Console × Studio](CONSOLE-STUDIO.md). Continua sendo a referência do SaveVault Community.
+> As propostas originais estão no canvas "SaveVault — Propostas de design".
 
 A interface é escura e quente, com acento de brasa laranja. A ideia é transmitir solidez: algo construído para durar.
 

@@ -1,6 +1,6 @@
 # Direção visual: Console × Studio
 
-> **Status:** escolhida em 2026-11-10. Substitui a [Forja](FORJA.md) no SaveForge Desktop.
+> **Status:** escolhida em 2026-11-10. Substitui a [Forja](FORJA.md) no SaveVault Desktop.
 > As seis propostas comparadas ficaram no canvas "Propostas de interface"; esta é a proposta 6.
 
 Esta direção junta as duas propostas preferidas:

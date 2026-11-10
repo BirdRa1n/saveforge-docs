@@ -3,7 +3,7 @@
 **Status:** Proposta · **Data:** 2026-11-09
 
 ## Decisão
-- O Registry é **código-fonte em Git** (`saveforge-registry`). O CI compila bundles JSON (zstd) por canal e os publica em hospedagem estática: GitHub Pages como primário, GitHub Releases e R2 como mirrors.
+- O Registry é **código-fonte em Git** (`savevault-registry`). O CI compila bundles JSON (zstd) por canal e os publica em hospedagem estática: GitHub Pages como primário, GitHub Releases e R2 como mirrors.
 - A assinatura usa **Ed25519 (libsodium)** em duas camadas:
   - a(s) **chave(s) raiz, offline**, assinam o `root.json`, que lista as chaves online e sua expiração;
   - a **chave online**, guardada como secret do GitHub Actions em um environment protegido, assina o `index.json`.
@@ -14,7 +14,7 @@
 ## Consequências
 - (+) Independente do website e do Supabase, com CDN barata e funcionamento offline pelo cache.
 - (+) Comprometer o Supabase ou a CDN não permite distribuir perfis.
-- (−) A gestão de chaves exige disciplina. O procedimento será documentado em `saveforge-registry`.
+- (−) A gestão de chaves exige disciplina. O procedimento será documentado em `savevault-registry`.
 
 ## Alternativas
 - **Servir via Supabase ou API própria:** acopla o Desktop ao backend.

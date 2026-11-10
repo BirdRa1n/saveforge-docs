@@ -1,4 +1,4 @@
-# Architecture Decision Records — SaveForge
+# Architecture Decision Records — SaveVault
 
 Este diretório reúne as decisões que afetam mais de um repositório. As ADRs locais de cada repositório ficam em `docs/adr/` dentro dele.
 

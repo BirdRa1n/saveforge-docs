@@ -1,6 +1,6 @@
-# Contribuindo com o saveforge-docs
+# Contribuindo com o savevault-docs
 
-Este repositório guarda a documentação **transversal** do ecossistema SaveForge: planejamento técnico, ADRs que afetam mais de um repositório e o guia visual.
+Este repositório guarda a documentação **transversal** do ecossistema SaveVault: planejamento técnico, ADRs que afetam mais de um repositório e o guia visual.
 
 ## O que vai em cada pasta
 
@@ -10,7 +10,7 @@ Este repositório guarda a documentação **transversal** do ecossistema SaveFor
 | `adr/` | Architecture Decision Records que afetam mais de um repositório |
 | `design/` | Direções visuais (Console × Studio no Desktop, Forja no Community), com tokens e regras de componentes |
 
-As ADRs que afetam um único repositório ficam em `docs/adr/` dentro desse repositório. Os formatos normativos (schemas, specs) ficam em `saveforge-specs`.
+As ADRs que afetam um único repositório ficam em `docs/adr/` dentro desse repositório. Os formatos normativos (schemas, specs) ficam em `savevault-specs`.
 
 ## ADRs
 
